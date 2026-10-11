@@ -16,6 +16,7 @@ import {GesturePoint, recognizeGesture} from './gestures';
 import {InputSnapshot, useInput} from './input';
 import {advanceDesktopTaps, discardFocusTap, queueDesktopTap, type PendingTap} from './tapArbitration';
 import {CatastropheType} from './types';
+import {advanceParticlesInPlace} from './particleRuntime';
 import {applyMiracle, copyWorld, tickEnvironment, type WorldSnapshot} from './simulation';
 import {advanceGround, depositAftermath, describeGround, groundStats, impactGround, newGroundField, sampleGround,
   type ChronicleEvent, type GroundField, type GroundStats} from './environment';
@@ -1903,16 +1904,24 @@ function RealisticTree({tree, isRiverFrozen, registerSway}: {
 
 /** One R3F frame subscriber for the entire forest instead of one per tree.
  * Tree meshes and authored materials remain unchanged; the parent owns sway. */
-function SwayingForest({trees,isRiverFrozen}:{trees:TreeData[];isRiverFrozen:boolean}) {
+function SwayingForest({trees,isRiverFrozen,quality}:{trees:TreeData[];isRiverFrozen:boolean;quality:VisualTier}) {
   const forest=useRef(new Map<number,{node:THREE.Group;offset:number;burnt:boolean}>());
   const registerSway=useCallback((id:number,offset:number,burnt:boolean,node:THREE.Group|null)=>{
     if(node) forest.current.set(id,{node,offset,burnt});
     else forest.current.delete(id);
   },[]);
+  const previousSwayTime=useRef(-1);
   useFrame(({clock})=>{
-    const at=clock.getElapsedTime()*2.2;
+    // The forest has no gameplay-owned motion; only visual sway is throttled.
+    // Reduced-motion trees start upright and need no per-frame writes.
+    if (REDUCE_SCENIC_MOTION) return;
+    const now=clock.getElapsedTime();
+    const interval=quality==='high'?1/30:quality==='medium'?1/20:1/12;
+    if (previousSwayTime.current >= 0 && now-previousSwayTime.current < interval) return;
+    previousSwayTime.current=now;
+    const at=now*2.2;
     for(const item of forest.current.values()) {
-      const sway=REDUCE_SCENIC_MOTION||item.burnt?0:Math.sin(at+item.offset)*0.035;
+      const sway=item.burnt?0:Math.sin(at+item.offset)*0.035;
       item.node.rotation.z=sway;
       item.node.rotation.x=sway*0.5;
     }
@@ -2452,9 +2461,9 @@ function DisasterVisualEffect({disaster, simSpeed}: {disaster: ActiveDisaster; s
 }
 
 /** Tornado and flood fields apply actual impulses to existing rigid-body rubble. */
-function PhysicsRubble({item, disasters, stonePBR, simSpeed}: {
+function PhysicsRubble({item, impulseDisasters, stonePBR, simSpeed}: {
   item: DebrisItem;
-  disasters: ActiveDisaster[];
+  impulseDisasters: ActiveDisaster[];
   stonePBR: {diffuse: THREE.CanvasTexture; normal: THREE.CanvasTexture};
   simSpeed: number;
 }) {
@@ -2468,11 +2477,12 @@ function PhysicsRubble({item, disasters, stonePBR, simSpeed}: {
     }
   }, [item.velocity]);
   useFrame((_, rawDt) => {
-    if (!body.current || simSpeed <= 0) return;
+    // Avoid the Rapier/WASM translation call for every sleeping fragment when
+    // there is no physically effective wave or tornado in the world.
+    if (!body.current || simSpeed <= 0 || impulseDisasters.length === 0) return;
     const dt = Math.min(rawDt, 0.075) * simSpeed;
     const position = body.current.translation();
-    for (const d of disasters) {
-      if (d.type !== 'tornado' && d.type !== 'wave') continue;
+    for (const d of impulseDisasters) {
       const dx = position.x - d.position.x;
       const dz = position.z - d.position.z;
       const distance = Math.hypot(dx, dz);
@@ -2507,34 +2517,43 @@ function InstancedParticleField({particles, simSpeed}: {
 }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const object = useMemo(() => new THREE.Object3D(), []);
-  const color = useMemo(() => new THREE.Color(), []);
+  const colorCache = useMemo(() => new Map<string,THREE.Color>(), []);
+  const lastDrawnPool = useRef<ParticleFX[] | null>(null);
+  const lastDrawnCount = useRef(0);
   useFrame((_, rawDt) => {
     const mesh = ref.current;
     if (!mesh) return;
     const dt = Math.min(rawDt, 0.08) * Math.max(0, simSpeed);
-    if (dt > 0 && particles.current.length) {
-      particles.current = particles.current.filter(p => {
-        p.pos.addScaledVector(p.vel, dt);
-        p.vel.y -= 10 * dt;
-        p.life -= dt;
-        p.opacity = Math.max(0, p.life / p.maxLife);
-        return p.life > 0;
-      });
+    const pool = particles.current;
+    if (dt > 0 && pool.length) advanceParticlesInPlace(pool, dt);
+    // As before, the most recently emitted 240 particles remain visible.
+    const start = Math.max(0, pool.length - 240);
+    const visibleCount = pool.length - start;
+    if (visibleCount === 0) {
+      mesh.count = 0;
+      lastDrawnPool.current = pool;
+      lastDrawnCount.current = 0;
+      return;
     }
-    const current = particles.current.slice(-240);
-    mesh.count = current.length;
-    current.forEach((p, i) => {
+    // A paused, unchanged pool needs no repeat GPU matrix/color uploads.
+    // A new cast replaces the pool reference, so even paused snapshots repaint.
+    if (dt === 0 && pool === lastDrawnPool.current && visibleCount === lastDrawnCount.current) return;
+    mesh.count = visibleCount;
+    for (let i = 0; i < visibleCount; i++) {
+      const p = pool[start + i];
       object.position.copy(p.pos);
       object.scale.setScalar(Math.max(0.001, p.size * p.opacity));
       object.rotation.set(0, 0, 0);
       object.updateMatrix();
       mesh.setMatrixAt(i, object.matrix);
-      mesh.setColorAt(i, color.set(p.color));
-    });
-    if (mesh.count) {
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      let tint = colorCache.get(p.color);
+      if (!tint) { tint = new THREE.Color(p.color); colorCache.set(p.color, tint); }
+      mesh.setColorAt(i, tint);
     }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    lastDrawnPool.current = pool;
+    lastDrawnCount.current = visibleCount;
   });
   return (
     <instancedMesh ref={ref} args={[undefined, undefined, 240]} frustumCulled={false}>
@@ -3529,6 +3548,10 @@ function Scene({
   const hasVolcano = getConfig('dynamicWeatherLighting') && activeDisasters.some(
     (d) => d.type === 'volcano' || d.type === 'meteor' || d.type === 'wildfire',
   );
+  // Share one filtered array among all rubble bodies rather than querying
+  // unrelated catastrophe types across up to eighty per-frame callbacks.
+  const impulseDisasters = useMemo(() => activeDisasters.filter(
+    d => d.type === 'tornado' || d.type === 'wave'), [activeDisasters]);
 
   return (
     <group>
@@ -3642,7 +3665,7 @@ function Scene({
       <RealisticSanctuary quality={quality}/>
 
       {/* Swaying Foliage Trees */}
-      <SwayingForest trees={trees} isRiverFrozen={false} />
+      <SwayingForest trees={trees} isRiverFrozen={false} quality={quality} />
 
       {/* Localized frost: never recolor the whole kingdom for one cast. */}
       {icePatches.map(p => (
@@ -3678,7 +3701,7 @@ function Scene({
       <Inhabitants key={`${worldSeed}_${resetSignal}`} activeDisasters={activeDisasters} simSpeed={simSpeed} fieldRef={groundRef} />
 
       {/* Physics Rubble: applied forces affect existing pieces as well as newly spawned ones. */}
-      {debris.map(deb => <PhysicsRubble key={deb.id} item={deb} disasters={activeDisasters}
+      {debris.map(deb => <PhysicsRubble key={deb.id} item={deb} impulseDisasters={impulseDisasters}
         stonePBR={stonePBR} simSpeed={simSpeed} />)}
 
       {/* Catastrophe FX */}

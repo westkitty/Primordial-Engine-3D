@@ -35,6 +35,9 @@ jobs:
       - name: Verify TypeScript/TSX syntax
         run: npm run syntax
 
+      - name: Verify particle simulation parity and report CPU-only benchmark
+        run: npm run benchmark:particles
+
       - name: Build playable game for the GitHub Pages subpath
         run: npm run build -- --base=/Primordial-Engine-3D/
 

@@ -3,7 +3,7 @@
 Project ID: `primordial-engine-3d`
 Source baseline: `primordial_engine_3d_repaired.zip` (26 entries, no .git)
 Work target: a separately packaged project, version `0.11.1`; do not overwrite supplied baseline ZIPs.
-Current status: v0.11.1 source repair tested (155/155); original AAA visual-overhaul requirement remains BLOCKED on missing npm build and unavailable browser/device proof.
+Current status: v0.12.0 particle/physics/forest performance repair under validation. Previous remote v0.11.1 production build passed on GitHub Actions after compiler repairs, but browser/device quality and Pages deployment remain unverified/blocked.
 
 ## Purpose and invariants
 - Preserve the 3D kingdom, procedural architecture, hand cursor, ten miracles, local restoration, gesture recognition, camera controls, configurable quality, audio, and optional Playground SDK integration.
@@ -128,3 +128,11 @@ Current status: v0.11.1 source repair tested (155/155); original AAA visual-over
 - Added `.github/workflows/pages.yml` to run `npm test`, `npm run syntax`, and the full dependency-enabled Vite build with base `/Primordial-Engine-3D/`, then deploy only the generated `dist/`.
 - Pages site initial state observed on the repository API as `has_pages: false`; selection of **Settings > Pages > Source: GitHub Actions** may still be required to enable the site. The default workflow token cannot perform the one-time Pages enablement.
 - Do not mark live deployment/playability verified unless a successful Pages Actions run and the hosted game have been inspected. If a CI build reports TS/R3F defects, repair them in a separate bounded pass before claiming a live release.
+
+## 0.12.0 runtime performance and repair pass (2026-10-11)
+- **Authority:** source-identical snapshot of actual GitHub `westkitty/Primordial-Engine-3D` `main` at `294dc0db`; prior source revisions and project state were not discarded. Local `.git` created only in an isolated copy for change-scoping; remote publication must be verified independently.
+- **Protected:** ten powers, authoritative world transitions, life/heat/memory, NPCs and wildlife, collisions and force rules, inputs, Time Atlas, Covenant, local saves, imported v1 world format, graphics quality UI, accessibility and render style.
+- **Bounded repair:** `particleRuntime.ts` single-pass stable in-place compaction (same Euler physics), last-240 visual window retained; paused unchanged GPU instance writes skipped, color decoding cached. `Game.tsx` rubble short-circuits Rapier translation when no wave/tornado; forest decorative update rate bounded by graphics quality. No changes to `simulation.ts`, `trial.ts`, `environment.ts` or save schema.
+- **Regression protection:** targeted particle equivalence/ownership, pause, render integration, force gate, scenic cadence checks; new `benchmark:particles` logs matched Node CPU-only loop measurements. CI invokes the benchmark but does not assert a brittle timing target.
+- **Evidence limitation:** JavaScript CPU hot-path timings are not browser frame times. Desktop/mobile WebGL experience, FPS, memory lifecycle and long-session playability are not yet proven. A previous CI run at `294dc0db` installed packages, passed all 155 tests, type-checked and built the Vite game, but failed deployment because `has_pages=false`.
+- **Persistent release blocker:** Pages must be enabled via repository Settings > Pages > Source: GitHub Actions before the workflow can deploy. The connected GitHub source connector does not expose the Pages enablement endpoint. Do not conflate build success with a public site.

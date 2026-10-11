@@ -25,6 +25,7 @@ const L = load('timeline.ts');
 const F = load('forecast.ts');
 const W = load('weather.ts');
 const V = load('vault.ts');
+const PR = load('particleRuntime.ts');
 function world() {
   return {blocks: [
     {id:'keep',originalPos:[0,1,0],type:'castle',destroyed:false},
@@ -1278,7 +1279,7 @@ test('shared forest sway has one frame subscriber instead of per-tree callbacks'
  assert.ok(begin>=0 && end>begin && forestEnd>end);
  assert.ok(!game.slice(begin,end).includes('useFrame('));
  assert.equal((game.slice(end,forestEnd).match(/useFrame\(/g)||[]).length,1);
- assert.ok(game.includes('<SwayingForest trees={trees} isRiverFrozen={false} />'));
+ assert.ok(game.includes('<SwayingForest trees={trees} isRiverFrozen={false} quality={quality} />'));
  assert.ok(game.slice(end,forestEnd).includes('item.burnt?0'));
 });
 
@@ -1671,7 +1672,7 @@ test('reduced motion covers river, forest and birds as well as the flag and came
  const river=g.slice(g.indexOf('function RealisticRiverSystem('),g.indexOf('function GabledRoof('));
  assert.ok(birds.includes('REDUCE_SCENIC_MOTION ? 0 : clock.getElapsedTime()'));
  assert.ok(birds.includes('b.rotation.z = REDUCE_SCENIC_MOTION ? 0'));
- assert.ok(forest.includes('REDUCE_SCENIC_MOTION||item.burnt?0'));
+ assert.ok(forest.includes('if (REDUCE_SCENIC_MOTION) return') && forest.includes('const sway=item.burnt?0'));
  assert.ok(river.includes('const t = REDUCE_SCENIC_MOTION ? 0 : clock.getElapsedTime()'));
  assert.ok(g.includes('if(REDUCE_SCENIC_MOTION)return;'));
 });
@@ -1684,5 +1685,73 @@ test('low-graphics cursor orb retains visible feedback but allocates no point li
  assert.ok(g.includes('isPrimed={isMiraclePrimed}\n        quality={quality}'));
  assert.ok(hand.includes("REDUCE_SCENIC_MOTION || handState === 'grab_world'"));
  assert.ok(hand.includes('orbRef.current && !REDUCE_SCENIC_MOTION'));
+});
+
+// The real renderer calls this pure update path every frame; the old path
+// allocated new filter and slice arrays and re-uploaded paused particles.
+test('particle compaction retains array and survivors in original order',()=>{
+ const mk=(id,life)=>({id,pos:{x:id,y:2,z:-id},vel:{x:1,y:2,z:-1},life,maxLife:3,opacity:1});
+ const a=mk(1,0.4),b=mk(2,0.1),c=mk(3,1.5),d=mk(4,0.3);
+ const pool=[a,b,c,d], original=pool;
+ const count=PR.advanceParticlesInPlace(pool,0.2);
+ assert.equal(count,3);assert.equal(pool,original);
+ assert.equal(pool[0],a);assert.equal(pool[1],c);assert.equal(pool[2],d);
+ assert.equal(b.life,-0.1);
+ assert.equal(a.pos.x,1.2);assert.equal(a.pos.y,2.4);
+ assert.equal(a.vel.y,0);assert.equal(a.opacity,(0.4-0.2)/3);
+});
+test('optimized particles numerically match the original filter implementation across frames',()=>{
+ const particles=Array.from({length:32},(_,i)=>({id:i,pos:{x:i*0.1,y:1,z:-i},
+   vel:{x:i*0.02-0.1,y:4-i*0.03,z:0.3},life:0.15+(i%8)*0.1,maxLife:1,opacity:1}));
+ const old=JSON.parse(JSON.stringify(particles));
+ for(let step=0;step<85;step++){
+  const dt=0.009+(step%7)*0.001;
+  const expected=old.filter(p=>{
+   p.pos.x+=p.vel.x*dt;p.pos.y+=p.vel.y*dt;p.pos.z+=p.vel.z*dt;
+   p.vel.y-=10*dt;p.life-=dt;p.opacity=Math.max(0,p.life/p.maxLife);
+   return p.life>0;
+  });
+  old.splice(0,old.length,...expected);
+  PR.advanceParticlesInPlace(particles,dt);
+  assert.equal(particles.length,old.length);
+  for(let j=0;j<old.length;j++){
+    assert.equal(particles[j].id,old[j].id);
+    for(const k of ['x','y','z']) assert.ok(Math.abs(particles[j].pos[k]-old[j].pos[k])<1e-10);
+    assert.ok(Math.abs(particles[j].life-old[j].life)<1e-10);
+    assert.ok(Math.abs(particles[j].opacity-old[j].opacity)<1e-10);
+  }
+ }
+});
+test('paused particles and zero-step updates keep state and ownership stable',()=>{
+ const pool=[{pos:{x:5,y:6,z:7},vel:{x:1,y:2,z:3},life:2,maxLife:2,opacity:1}];
+ const initial=JSON.stringify(pool);
+ for(const dt of [0,-1,NaN,Infinity]){
+   assert.equal(PR.advanceParticlesInPlace(pool,dt),1);
+   assert.equal(JSON.stringify(pool),initial);
+ }
+ assert.equal(pool.length,1);
+});
+test('real particle renderer invokes in-place compacting and preserves newest visible 240',()=>{
+ const g=fs.readFileSync(path.join(root,'Game.tsx'),'utf8');
+ const a=g.slice(g.indexOf('function InstancedParticleField('),g.indexOf('function TrialBeacon('));
+ assert.ok(a.includes('advanceParticlesInPlace(pool, dt)'));
+ assert.ok(a.includes('Math.max(0, pool.length - 240)'));
+ assert.ok(a.includes('pool === lastDrawnPool.current'));
+ assert.ok(!a.includes('particles.current.filter('));
+ assert.ok(!a.includes('particles.current.slice(-240)'));
+});
+test('rubble avoids native physics reads unless a wave or tornado is active',()=>{
+ const g=fs.readFileSync(path.join(root,'Game.tsx'),'utf8');
+ const r=g.slice(g.indexOf('function PhysicsRubble('),g.indexOf('function InstancedParticleField('));
+ assert.ok(r.indexOf('impulseDisasters.length === 0')<r.indexOf('body.current.translation()'));
+ assert.ok(g.includes('const impulseDisasters = useMemo(() => activeDisasters.filter('));
+ assert.ok(g.includes('item={deb} impulseDisasters={impulseDisasters}'));
+});
+test('forest sway update has bounded tier-dependent frequency while gameplay movement stays separate',()=>{
+ const g=fs.readFileSync(path.join(root,'Game.tsx'),'utf8');
+ const forest=g.slice(g.indexOf('function SwayingForest('),g.indexOf('function RealisticSanctuary('));
+ assert.ok(forest.includes("quality==='high'?1/30:quality==='medium'?1/20:1/12"));
+ assert.ok(forest.includes('if (REDUCE_SCENIC_MOTION) return'));
+ assert.ok(g.includes('<SwayingForest trees={trees} isRiverFrozen={false} quality={quality} />'));
 });
 console.log(`Regression tests passed: ${count}/${count+(process.exitCode?1:0)}${process.exitCode?' (one or more failures)':''}`);

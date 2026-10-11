@@ -1,6 +1,34 @@
-# Primordial Engine 3D — The Living Field Atlas (0.11.1)
+# Primordial Engine 3D — The Living Field Atlas (0.12.0)
 
 This is a source-level uplift of the **user-provided Google Playground Labs project**, continuing versions 0.2 and 0.3 (not a restart). The original art direction and procedural kingdom have been retained; the repair addresses gameplay state corruption, camera and touch controls, catastrophe outcomes, rune recognition, world simulation and several rendering pressure points. The original third-party notice file remains included.
+
+## v0.12.0 — Runtime hot-path repair and measured CPU uplift
+
+This is an additive repair of the **existing** React Three Fiber game, not a replacement
+or visual mockup. The 10 miracles, canonical world state, physics collision, mobile/desktop
+controls, imports, Time Atlas, Covenant challenges, and visual style are protected.
+
+- The live particle field uses the **same position, gravity, lifetime and order** as before,
+  but now compacts particles in place. It avoids two temporary arrays per active frame,
+  caches repeated per-particle color decoding, and avoids uploading unchanged paused
+  particle matrices and colors. The newest 240 visual particles remain the visible cap.
+- Rubble bodies avoid crossing into Rapier's WASM `translation` API every frame
+  when no wave or tornado force exists; active impulse calculations are unchanged.
+- Decorative forest motion updates at bounded high/medium/low rates of 30/20/12 Hz,
+  without affecting villager movement or the simulation scheduler. Reduced motion skips
+  the forest animation entirely.
+- Run `npm run benchmark:particles` for a matched CPU-only comparison of the previous
+  array-allocation loop and the new update logic. The output reports simulation cost,
+  **not** WebGL draw time, GPU performance, or device FPS. Six additional regression
+  tests cover conservation of particle behavior, pause, last-240 rendering, force guard,
+  and forest quality cadence.
+- Historical `RELEASE_MANIFEST.json` is the **immutable v0.11.1 ZIP manifest**, not a
+  checksum index of the living `main` branch. Do not validate 0.12 source against it.
+
+**Evidence:** GitHub Actions successfully built the previous 0.11.1 tree after compiler
+repairs. This version requires its own CI build and runtime validation. GitHub Pages remains
+**disabled** at the repository level until the owner selects GitHub Actions under
+Settings → Pages; a green build does not mean the website was published.
 
 ## v0.11.1 - Recursive source repair (NOT runtime-certified)
 

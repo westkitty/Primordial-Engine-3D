@@ -45,7 +45,7 @@ function emptyPointer(): PointerState {
     panDeltaX: 0, panDeltaY: 0, touchCount: 0, cancelled: false, doubleClicked: false};
 }
 
-export function useInput(containerRef: RefObject<HTMLDivElement>, options: {enabled?: boolean} = {}): MutableRefObject<InputSnapshot> {
+export function useInput(containerRef: RefObject<HTMLDivElement | null>, options: {enabled?: boolean} = {}): MutableRefObject<InputSnapshot> {
   const {enabled = true} = options;
   const inputRef = useRef<InputSnapshot>({actions: createEmptyActions(), pointer: emptyPointer()});
 

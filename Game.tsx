@@ -2459,6 +2459,14 @@ function PhysicsRubble({item, disasters, stonePBR, simSpeed}: {
   simSpeed: number;
 }) {
   const body = useRef<RapierRigidBody>(null);
+  // Rapier does not accept a linvel JSX prop. Apply initial velocity once the
+  // rigid body actually exists, without losing the impulse on first mount.
+  const bindBody = useCallback((instance: RapierRigidBody | null) => {
+    body.current = instance;
+    if (instance && item.velocity) {
+      instance.setLinvel({x: item.velocity[0], y: item.velocity[1], z: item.velocity[2]}, true);
+    }
+  }, [item.velocity]);
   useFrame((_, rawDt) => {
     if (!body.current || simSpeed <= 0) return;
     const dt = Math.min(rawDt, 0.075) * simSpeed;
@@ -2482,8 +2490,8 @@ function PhysicsRubble({item, disasters, stonePBR, simSpeed}: {
       }
     }
   });
-  return <RigidBody ref={body} position={item.position} rotation={item.rotation}
-    linvel={item.velocity} colliders="cuboid" restitution={0.35} friction={0.8}>
+  return <RigidBody ref={bindBody} position={item.position} rotation={item.rotation}
+    colliders="cuboid" restitution={0.35} friction={0.8}>
     <mesh castShadow receiveShadow>
       <boxGeometry args={item.size} />
       <meshStandardMaterial map={stonePBR.diffuse} normalMap={stonePBR.normal}
@@ -3240,7 +3248,7 @@ function Scene({
     if (handClearTimer.current) clearTimeout(handClearTimer.current);
   }, []);
 
-  useFrame((_, rawDelta) => {
+  useFrame(({clock}, rawDelta) => {
     const renderDt = Math.min(rawDelta, 0.075);
     const dt = renderDt * Math.max(0, simSpeed);
     const input = inputRef.current;
@@ -3402,7 +3410,7 @@ function Scene({
     const camZ = cam.smoothedTarget.z + Math.cos(cam.smoothedOrbit) * Math.cos(cam.pitch) * cam.smoothedDistance;
     const shake = simSpeed > 0 && !REDUCE_SCENIC_MOTION && getConfig('cameraShakeEnabled')
       ? Math.min(.42,cameraShakeRef.current) : 0;
-    const shakeTime = state.clock.elapsedTime;
+    const shakeTime = clock.elapsedTime;
     camera.position.set(camX + Math.sin(shakeTime*31.3) * shake * .39,
       camY + Math.sin(shakeTime*26.2 + 1.2) * shake * .26,
       camZ + Math.sin(shakeTime*23.6 + 2.4) * shake * .39);

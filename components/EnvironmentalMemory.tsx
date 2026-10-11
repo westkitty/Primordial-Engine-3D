@@ -47,11 +47,14 @@ export function EnvironmentalMemory({fieldRef, layer = 'all'}: {
       const total = heat + water + frost + ash + stone;
       tint.setRGB(0, 0, 0);
       if (total > 0) {
-        tint.addScaledColor(HOT, heat / total);
-        tint.addScaledColor(WET, water / total);
-        tint.addScaledColor(FROST, frost / total);
-        tint.addScaledColor(ASH, ash / total);
-        tint.addScaledColor(STONE, stone / total);
+        // Color.addScaledColor does not exist in Three.js. Mix linear RGB
+        // channels directly, with no allocations in the 1,024-cell update.
+        const invTotal = 1 / total;
+        tint.setRGB(
+          (HOT.r * heat + WET.r * water + FROST.r * frost + ASH.r * ash + STONE.r * stone) * invTotal,
+          (HOT.g * heat + WET.g * water + FROST.g * frost + ASH.g * ash + STONE.g * stone) * invTotal,
+          (HOT.b * heat + WET.b * water + FROST.b * frost + ASH.b * ash + STONE.b * stone) * invTotal,
+        );
       }
       mesh.setColorAt(i, tint);
     }

@@ -1,0 +1,35 @@
+{
+  "name": "primordial-engine-3d",
+  "version": "0.11.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "node tests/run-tests.cjs",
+    "syntax": "node verify-syntax.cjs",
+    "benchmark": "node tests/benchmark.cjs",
+    "benchmark:continuity": "node tests/benchmark-continuity.cjs",
+    "benchmark:timeline": "node tests/benchmark-timeline.cjs",
+    "benchmark:covenant": "node tests/benchmark-covenant.cjs",
+    "benchmark:visual": "node tests/benchmark-visual.cjs",
+    "benchmark:finishing": "node tests/benchmark-finishing.cjs"
+  },
+  "dependencies": {
+    "@react-three/fiber": "9.5.0",
+    "@react-three/postprocessing": "3.0.4",
+    "@react-three/rapier": "2.2.0",
+    "postprocessing": "6.38.3",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "@types/three": "0.180.0",
+    "typescript": "5.9.3",
+    "vite": "7.1.9"
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "title": "Primordial Engine 3D",
+  "hook": "Unleash elemental catastrophes across kingdoms",
+  "game_overview": "An interactive 3D fantasy catastrophe sandbox where players wield cataclysmic elemental powers to reshape, burn, freeze, shatter, and restore miniature kingdoms.",
+  "artstyle": "fantasy",
+  "genre": "arcade",
+  "winning_condition": "Experiment freely, triggering chained elemental combos and discovering ancient world milestones.",
+  "losing_condition": "No loss state in sandbox mode; freely reset or restore the kingdom at any time.",
+  "player_mode": "single_player",
+  "supported_orientations": [
+    "landscape"
+  ],
+  "input_methods": [
+    "touch",
+    "mouse",
+    "keyboard"
+  ],
+  "score_options": {
+    "score_type": "points",
+    "score_order": "higher_is_better"
+  },
+  "low_end_device_support": false,
+  "mobile_playable": true,
+  "language": [
+    "en"
+  ],
+  "content_descriptors": [],
+  "controls": [
+    {
+      "input": "Left Click / Tap on World",
+      "action": "Cast active catastrophe power at targeted terrain location."
+    },
+    {
+      "input": "Right Click + Drag / Two Finger Drag",
+      "action": "Orbit and rotate god camera around the kingdom."
+    },
+    {
+      "input": "W/A/S/D or Arrow Keys / Virtual D-Pad",
+      "action": "Pan god camera across the valley landscape."
+    },
+    {
+      "input": "Mouse Scroll / Pinch Zoom",
+      "action": "Zoom camera closer into villages or pull back for macro kingdom view."
+    },
+    {
+      "input": "1-9 Number Keys / Power Wheel Buttons",
+      "action": "Select catastrophe power (Volcano, Quake, Tornado, Meteor, Wave, Crystal, Lightning, Freeze, Fire, Restore)."
+    },
+    {
+      "input": "Spacebar / Slow Motion Button",
+      "action": "Toggle slow-motion cinematic simulation speed."
+    },
+    {
+      "input": "R Key / Reset Button",
+      "action": "Trigger complete world regeneration and restoration wave."
+    }
+  ],
+  "sections": [
+    {
+      "title": "Design Pillars",
+      "content": "1. Spectacular Power Fantasy: Every catastrophe produces visceral visual drama, dynamic lighting, glowing embers, shockwaves, and environmental reaction. 2. Real Systemic Interaction: Fire burns trees and ignites wooden roofs; water douses fire and freezes into ice bridges; earthquakes crumble stone battlements into physics debris; crystals transmute rock. 3. Player Agency & Sandbox Freedom: Free-flying cinematic camera, slow-motion controls, and zero arbitrary friction.",
+      "summary": "Guiding principles for the fantasy catastrophe sandbox."
+    },
+    {
+      "title": "Core Loop",
+      "content": "The player selects from a pantheon of 10 cataclysmic primordial powers and clicks or drags across a detailed fantasy valley populated with castles, windmills, watchtowers, pine forests, rivers, and ruins. Catastrophes trigger persistent state changes: scorched earth, molten lava channels, shattered towers, frozen waters, and radiant crystalline spires. Players build destruction score and combo multipliers, inspect aftermaths in cinematic slow-motion, or cast the Primordial Restoration to revitalize the land.",
+      "summary": "The exploratory cycle of casting disasters, observing chained reactions, and restoring terrain."
+    },
+    {
+      "title": "Core Mechanics & Elemental Interactions",
+      "content": "1. Volcanic Eruption: Raises magma calderas that erupt flaming volcanic bombs and leave glowing lava trails that melt structures. 2. Localized Earthquake: Fractures the ground with fissure crevices and collapses stone buildings into physics chunks. 3. Magical Tornado: Spawns vortexes that vacuum lightweight debris, trees, and roof tiles before hurling them outwards. 4. Meteor Shower: Rains celestial flaming asteroids with cratering impact shockwaves. 5. Tidal Wave: Sweeps a towering surge of water across lowlands, dousing fires and toppling timber bridges. 6. Crystalline Spire Growth: Transmutes soil into towering glowing amethyst crystals. 7. Divine Lightning Storm: Strikes towers and ground with high-voltage arcs and thunderous flashes. 8. Glacial Freeze: Solidifies rivers into traversable ice sheets and coats scorched terrain in hoarfrost. 9. Forest Wildfire: Spreads rapidly along interconnected tree canopies with wind vectoring. 10. Primordial Restoration: Channels radiant life energy that regrows flora, repairs battlements, and purifies scorched earth.",
+      "summary": "10 unique catastrophe powers and their chemical and physical chain reactions."
+    },
+    {
+      "title": "3D Camera & Movement Alignment",
+      "content": "3D Coordinate System: Three.js right-handed coordinates (+Y is Altitude/Up, +X is East, -Z is North into the valley). Camera Perspective: Free-floating cinematic orbital god camera with smooth panning, tilt, altitude zooming, and auto-cinematic slow-motion tracking. Raycasting translates mouse/touch screen coordinates directly onto terrain and building colliders with visual targeting reticles.",
+      "summary": "God-perspective orbital and pan camera with coordinate alignment."
+    },
+    {
+      "title": "3D Scene Hierarchy & Lighting Mandates",
+      "content": "Atmosphere: Rich fantasy twilight atmosphere with dramatic dynamic lighting (ambientIntensity 1.8, sunIntensity 3.5). Dynamic point lights track meteors, lightning strikes, and molten lava fissures. Destructible structures (castles, towers, timber bridges, windmills) are composed of segmented procedural blocks that decouple into physics rigid bodies upon impact. UI & HUD: Clean translucent Tailwind god-control bar docked at the bottom with safe-padded catastrophe selector buttons, slow-mo toggle, chaos meter, and combo tracker, never occluding the 3D scene.",
+      "summary": "Vibrant fantasy kingdom lighting, volumetric storm haze, dynamic catastrophe point lights, and clean UI safe zones."
+    },
+    {
+      "title": "Characters & Kingdom Inhabitants",
+      "content": "Villagers, royal knights, fleeing livestock, sailing riverboats, and patrolling watchtower guards that panic and react dynamically to approaching storms, fires, and earthquakes.",
+      "summary": "Miniature animated fantasy kingdom entities reacting to catastrophes."
+    },
+    {
+      "title": "Fairness & Precision Tools",
+      "content": "Hovering elemental glyph reticle projects catastrophe radius onto terrain contours, showing affected blast zones and structural hazard warnings before casting.",
+      "summary": "Targeting reticles, elemental radius previews, and disaster trajectory indicators."
+    },
+    {
+      "title": "Juice & Game Feel",
+      "content": "Anticipation Juice: Sky darkening and arcane gathering runes around target zone before meteor impact or lightning strike. State Change Juice: Emissive glowing lava channels, burning vertex smoke trails, crystalline refraction. Impact Juice: Ground-thumping screen shake tiers, radial shockwave rings, structural crumbling debris bursts, and layered bass impact SFX.",
+      "summary": "Multi-tiered camera shake, particle systems, slow-mo impacts, and thunderous audio."
+    },
+    {
+      "title": "Social Mechanics & Audience",
+      "content": "Destruction combo milestones, total devastation percentage trackers, and creative catastrophe sandbox appeal for all strategy and simulation enthusiasts.",
+      "summary": "High-score destruction combos, chaos tier milestones, and cinematic replay share snapshots."
+    },
+    {
+      "title": "Accessibility",
+      "content": "Toggleable camera shake intensity, simulation speed presets (0.25x, 0.5x, 1x, 2x), high-contrast power icons, and full mobile touch optimization.",
+      "summary": "Adjustable screen shake, colorblind glyph cues, and variable simulation speeds."
+    },
+    {
+      "title": "Structural Integrity",
+      "content": "Interactive 3D God Sandbox -> Catastrophe Codex & Milestone Log -> Instant Primordial Regeneration. Persistent high score tracking and combo multiplier milestones.",
+      "summary": "Seamless sandbox loop with instant reset and catastrophe codex."
+    },
+    {
+      "title": "Virtual Touch Controls Implementation",
+      "content": "Render on-screen virtual catastrophe quick-action buttons in bottom dock with touch-none and pointer-events-auto. Wire up single-touch tap-to-cast and two-finger pan/pinch gestures cleanly for mobile devices.",
+      "summary": "Mobile touch controls and gestures for casting and camera navigation."
+    }
+  ]
+}

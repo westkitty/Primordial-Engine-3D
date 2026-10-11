@@ -30,6 +30,24 @@ The **actual existing React Three Fiber world** is upgraded, not a screenshot or
 - **Engineering:** no new npm dependencies, remote visual assets, world-save migrations, game mechanics, or physics collisions. Existing sandbox, all ten powers, Covenant, Time Atlas and vault remain.
 - **Evidence:** see `VISUAL_DIRECTION.md` for budgets and acceptance oracle, `V010_VISUAL_REPORT.md` for the verified limits.
 
+## Play online with GitHub Pages
+
+Deployment is configured using `.github/workflows/pages.yml`, which installs the existing
+pinned dependencies, runs the gameplay and syntax checks, type-checks and builds the actual
+Vite game, then publishes `dist/` as a GitHub Pages artifact on pushes to `main`.
+
+**One-time repository setting:** In [Settings > Pages](https://github.com/westkitty/Primordial-Engine-3D/settings/pages),
+choose **GitHub Actions** under **Build and deployment > Source**. This cannot be enabled
+by the repository workflow's default `GITHUB_TOKEN`. After selecting the source, rerun
+[Publish Primordial Engine 3D to GitHub Pages](https://github.com/westkitty/Primordial-Engine-3D/actions/workflows/pages.yml)
+or push a new commit to `main`.
+
+The expected URL after a successful deployment is
+<https://westkitty.github.io/Primordial-Engine-3D/>. The workflow sets Vite's asset base to
+`/Primordial-Engine-3D/` only for deployment; local `npm run dev` still works at `/`.
+No static screenshots or precompiled mockups are deployed. Production browser playability
+and mobile performance still require independent checks after Pages reports success.
+
 ## Start locally
 
 Requires Node.js 20.19+ or 22.12+ and an internet connection for the initial dependency install.

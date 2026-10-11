@@ -1,0 +1,64 @@
+name: Publish Primordial Engine 3D to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: primordial-engine-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # This source archive does not yet have a package lockfile.
+      - name: Install declared dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run gameplay regression suite
+        run: npm test
+
+      - name: Verify TypeScript/TSX syntax
+        run: npm run syntax
+
+      - name: Build playable game for the GitHub Pages subpath
+        run: npm run build -- --base=/Primordial-Engine-3D/
+
+      - name: Upload the built game
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # One-time repo setting: Settings > Pages > Build and deployment > GitHub Actions.
+      - name: Verify GitHub Pages configuration
+        uses: actions/configure-pages@v5
+
+      - name: Deploy the game
+        id: deployment
+        uses: actions/deploy-pages@v4

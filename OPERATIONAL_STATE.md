@@ -122,3 +122,9 @@ Current status: v0.11.1 source repair tested (155/155); original AAA visual-over
 - **Blocking requirement:** `npm run build` fails TS2688 missing `vite/client`; npm ping EAI_AGAIN. No R3F/WebGL visual evidence, mobile input/gameplay, device FPS, or 20-minute lifecycle proof. The required fresh complete verification gate cannot pass.
 - **Git:** archive is not a Git checkout; no branch/commit/push. Do not invent or initialize one.
 - **Continuation:** npm-connected install; full TSX build; run desktop/mobile visual scenario matrix; check 10 miracles, 3 trials, Time Atlas, restores, 3 quality tiers and reduced motion; fix observed defects and begin an independent original-task verification pass.
+
+## GitHub Pages publication setup (2026-10-11)
+- Remote source target: `westkitty/Primordial-Engine-3D`, `main`; source now lives in GitHub, unlike earlier ZIP-only reports.
+- Added `.github/workflows/pages.yml` to run `npm test`, `npm run syntax`, and the full dependency-enabled Vite build with base `/Primordial-Engine-3D/`, then deploy only the generated `dist/`.
+- Pages site initial state observed on the repository API as `has_pages: false`; selection of **Settings > Pages > Source: GitHub Actions** may still be required to enable the site. The default workflow token cannot perform the one-time Pages enablement.
+- Do not mark live deployment/playability verified unless a successful Pages Actions run and the hosted game have been inspected. If a CI build reports TS/R3F defects, repair them in a separate bounded pass before claiming a live release.
